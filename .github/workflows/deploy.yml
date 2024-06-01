@@ -1,0 +1,35 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+
+      - name: Copy files via SCP
+        run: |
+          scp -r -o StrictHostKeyChecking=no ./src bitnami@13.231.154.154:/opt/bitnami/nginx/html/laravel-docker
+
+      - name: Install dependencies
+        run: |
+          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "cd /opt/bitnami/nginx/html/laravel-docker/src && composer install"
+
+      - name: Set permissions
+        run: |
+          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "sudo chown -R www-data:www-data /opt/bitnami/nginx/html/laravel-docker/src"
+
+      - name: Restart Nginx
+        run: |
+          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "sudo /opt/bitnami/ctlscript.sh restart nginx"
