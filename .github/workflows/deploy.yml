@@ -20,20 +20,34 @@ jobs:
 
       - name: Set permissions before SCP
         run: |
-          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "sudo chown -R bitnami:bitnami /opt/bitnami/nginx/html/laravel-docker"
+          ssh -o StrictHostKeyChecking=no bitnami@${{ secrets.LIGHTSAIL_INSTANCE_IP }} "sudo chown -R bitnami:bitnami /opt/bitnami/nginx/html/laravel-docker"
 
       - name: Copy files via SCP
         run: |
-          scp -r -o StrictHostKeyChecking=no ./src bitnami@13.231.154.154:/opt/bitnami/nginx/html/laravel-docker
+          scp -r -o StrictHostKeyChecking=no ./src bitnami@${{ secrets.LIGHTSAIL_INSTANCE_IP }}:/opt/bitnami/nginx/html/laravel-docker
 
       - name: Install dependencies
         run: |
-          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "cd /opt/bitnami/nginx/html/laravel-docker/src && composer install"
+          ssh -o StrictHostKeyChecking=no bitnami@${{ secrets.LIGHTSAIL_INSTANCE_IP }} "cd /opt/bitnami/nginx/html/laravel-docker/src && composer install"
 
       - name: Set permissions after SCP
         run: |
-          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "sudo chown -R www-data:www-data /opt/bitnami/nginx/html/laravel-docker/src"
+          ssh -o StrictHostKeyChecking=no bitnami@${{ secrets.LIGHTSAIL_INSTANCE_IP }} "
+            sudo chown -R bitnami:daemon /opt/bitnami/nginx/html/laravel-docker/src &&
+            sudo chmod -R 775 /opt/bitnami/nginx/html/laravel-docker/src/storage &&
+            sudo chmod -R 775 /opt/bitnami/nginx/html/laravel-docker/src/bootstrap/cache &&
+            sudo chmod 664 /opt/bitnami/nginx/html/laravel-docker/src/.env &&
+            sudo chown -R bitnami:daemon /opt/bitnami/nginx/html/laravel-docker/src/storage/logs &&
+            sudo chmod -R 775 /opt/bitnami/nginx/html/laravel-docker/src/storage/logs &&
+            sudo chown -R bitnami:daemon /opt/bitnami/nginx/html/laravel-docker/src/storage/framework &&
+            sudo chmod -R 775 /opt/bitnami/nginx/html/laravel-docker/src/storage/framework &&
+            sudo chown -R bitnami:daemon /opt/bitnami/nginx/html/laravel-docker/src/storage/framework/views &&
+            sudo chmod -R 775 /opt/bitnami/nginx/html/laravel-docker/src/storage/framework/views
+          "
 
-      - name: Restart Nginx
+      - name: Restart Services
         run: |
-          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "sudo /opt/bitnami/ctlscript.sh restart nginx"
+          ssh -o StrictHostKeyChecking=no bitnami@${{ secrets.LIGHTSAIL_INSTANCE_IP }} "
+            sudo /opt/bitnami/ctlscript.sh restart php-fpm &&
+            sudo /opt/bitnami/ctlscript.sh restart nginx
+          "
