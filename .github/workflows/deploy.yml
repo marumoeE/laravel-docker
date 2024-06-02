@@ -18,6 +18,10 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
 
+      - name: Set permissions before SCP
+        run: |
+          ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "sudo chown -R bitnami:bitnami /opt/bitnami/nginx/html/laravel-docker"
+
       - name: Copy files via SCP
         run: |
           scp -r -o StrictHostKeyChecking=no ./src bitnami@13.231.154.154:/opt/bitnami/nginx/html/laravel-docker
@@ -26,7 +30,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "cd /opt/bitnami/nginx/html/laravel-docker/src && composer install"
 
-      - name: Set permissions
+      - name: Set permissions after SCP
         run: |
           ssh -o StrictHostKeyChecking=no bitnami@13.231.154.154 "sudo chown -R www-data:www-data /opt/bitnami/nginx/html/laravel-docker/src"
 
